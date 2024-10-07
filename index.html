@@ -38,14 +38,20 @@
             margin-top: 20px;
             font-size: 18px;
         }
+        #time {
+            margin-top: 10px;
+            font-size: 18px;
+            color: #333;
+        }
     </style>
 </head>
 <body>
     <h1>ESP32 LED Control</h1>
     <button id="connect">Connect to ESP32</button>
-    <button id="on" disabled>Turn ON LED_</button>
+    <button id="on" disabled>Turn ON LED</button>
     <button id="off" disabled>Turn OFF LED</button>
     <div id="status">Status: Disconnected</div>
+    <div id="time"></div> <!-- Display the time the sensor goes off -->
 
     <script>
         let device;
@@ -53,6 +59,7 @@
 
         const SERVICE_UUID = 'b9dc2de1-81d7-4d97-ad71-ebfe4f150eb4';
         const CHARACTERISTIC_UUID = 'e86d08ce-5158-468a-889e-0a470ea3d651';
+        const TIME_CHARACTERISTIC_UUID = 'YOUR_TIME_CHARACTERISTIC_UUID'; // Update with actual UUID for time updates
 
         document.getElementById('connect').addEventListener('click', async () => {
             try {
@@ -69,6 +76,9 @@
                 document.getElementById('off').disabled = false;
                 document.getElementById('status').textContent = 'Status: Connected';
 
+                // Start listening for notifications from the ESP32
+                await characteristic.startNotifications();
+                characteristic.addEventListener('characteristicvaluechanged', handleValueChanged);
             } catch (error) {
                 console.error('Connection failed!', error);
             }
@@ -88,7 +98,15 @@
             document.getElementById('on').disabled = true;
             document.getElementById('off').disabled = true;
             document.getElementById('status').textContent = 'Status: Disconnected';
+            document.getElementById('time').textContent = ''; // Clear time on disconnect
         });
+
+        // Handle value changes (time notifications)
+        async function handleValueChanged(event) {
+            const value = event.target.value.getUint8(0); // Assuming value is a string representation of time
+            const time = new TextDecoder().decode(event.target.value);
+            document.getElementById('time').textContent = `Sensor Triggered At: ${time}`;
+        }
     </script>
 </body>
 </html>
