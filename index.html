@@ -7,8 +7,8 @@
     body {
       text-align: center;
       font-family: "Trebuchet MS", Arial;
-      margin-left:auto;
-      margin-right:auto;
+      margin-left: auto;
+      margin-right: auto;
     }
     .slider {
       width: 300px;
@@ -20,6 +20,7 @@
   <p>Position: <span id="servoPos">90</span></p>
   <input type="range" min="0" max="180" value="90" class="slider" id="servoSlider">
   <p><button id="connectButton">Connect to ESP32</button></p>
+  <p id="statusMessage"></p> <!-- Status message for connection feedback -->
 
   <script>
     let bluetoothDevice;
@@ -29,6 +30,7 @@
 
     const slider = document.getElementById("servoSlider");
     const servoPos = document.getElementById("servoPos");
+    const statusMessage = document.getElementById("statusMessage");
 
     slider.oninput = function() {
       servoPos.innerHTML = this.value;
@@ -56,8 +58,10 @@
         bleCharacteristic = await service.getCharacteristic(characteristicUuid);
 
         console.log('Connected to ESP32! Ready to control servo.');
+        statusMessage.innerHTML = "Connected to ESP32! Ready to control servo.";  // Update status message
       } catch (error) {
         console.error('Error: ' + error);
+        statusMessage.innerHTML = "Error: " + error;  // Update status message with error
       }
     });
   </script>
