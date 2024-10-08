@@ -45,7 +45,12 @@
       try {
         console.log('Requesting Bluetooth Device...');
         bluetoothDevice = await navigator.bluetooth.requestDevice({
-          filters: [{ services: [serviceUuid] }]
+          filters: [
+            {
+              services: [serviceUuid],
+              name: 'YourESP32Name'  // Replace with your ESP32's Bluetooth name
+            }
+          ]
         });
 
         console.log('Connecting to GATT Server...');
