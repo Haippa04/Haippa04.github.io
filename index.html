@@ -1,38 +1,83 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" href="data:,">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESP32 Servo Control</title>
   <style>
     body {
       text-align: center;
-      font-family: "Trebuchet MS", Arial;
-      margin-left:auto;
-      margin-right:auto;
+      font-family: "Trebuchet MS", Arial, sans-serif;
+      margin-left: auto;
+      margin-right: auto;
     }
     .slider {
       width: 300px;
     }
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
   </style>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 </head>
 <body>
-  <h1>ESP32 with Servo</h1>
-  <p>Position: <span id="servoPos"></span></p>
-  <input type="range" min="0" max="180" class="slider" id="servoSlider" onchange="servo(this.value)"/>
+
+  <h1>ESP32 Servo Control</h1>
+  <button id="connectButton">Connect to ESP32</button>
+  <p>Position: <span id="servoPos">90</span></p>
+  <input type="range" min="0" max="180" class="slider" id="servoSlider" value="90" />
+
   <script>
-    var slider = document.getElementById("servoSlider");
-    var servoP = document.getElementById("servoPos");
-    servoP.innerHTML = slider.value;
-    slider.oninput = function() {
-      slider.value = this.value;
-      servoP.innerHTML = this.value;
-    }
-    $.ajaxSetup({timeout:1000});
-    function servo(pos) {
-      $.get("/?value=" + pos + "&");
-      {Connection: close};
-    }
+    let device;
+    let characteristic;
+
+    const SERVICE_UUID = 'your-service-uuid-here';  // Replace with your actual service UUID
+    const CHARACTERISTIC_UUID = 'your-characteristic-uuid-here';  // Replace with your actual characteristic UUID
+
+    document.getElementById('connectButton').addEventListener('click', async () => {
+      try {
+        device = await navigator.bluetooth.requestDevice({
+          filters: [{ name: 'ESP32_Servo_Control' }],  // Replace with the name of your ESP32
+          optionalServices: [SERVICE_UUID]
+        });
+
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService(SERVICE_UUID);
+        characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+        document.getElementById('connectButton').disabled = true;
+        alert('Connected to ESP32!');
+      } catch (error) {
+        console.error('Error connecting to ESP32:', error);
+      }
+    });
+
+    const slider = document.getElementById('servoSlider');
+    const servoPos = document.getElementById('servoPos');
+
+    slider.addEventListener('input', async () => {
+      const position = slider.value;
+      servoPos.textContent = position;
+
+      if (characteristic) {
+        const encoder = new TextEncoder();
+        await characteristic.writeValue(encoder.encode(position));
+      } else {
+        alert('Not connected to ESP32.');
+      }
+    });
   </script>
 </body>
 </html>
