@@ -1,81 +1,63 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ESP32 Servo Control</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ESP32 Servo Control via Bluetooth</title>
   <style>
     body {
       text-align: center;
-      font-family: "Trebuchet MS", Arial, sans-serif;
-      margin-left: auto;
-      margin-right: auto;
+      font-family: "Trebuchet MS", Arial;
+      margin-left:auto;
+      margin-right:auto;
     }
     .slider {
       width: 300px;
     }
-    button {
-      padding: 10px 20px;
-      margin: 10px;
-      font-size: 16px;
-      cursor: pointer;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 5px;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-    button:disabled {
-      background-color: #ccc;
-      cursor: not-allowed;
-    }
   </style>
 </head>
 <body>
-
   <h1>ESP32 Servo Control</h1>
-  <button id="connectButton">Connect to ESP32</button>
   <p>Position: <span id="servoPos">90</span></p>
-  <input type="range" min="0" max="180" class="slider" id="servoSlider" value="90" />
+  <input type="range" min="0" max="180" value="90" class="slider" id="servoSlider">
+  <p><button id="connectButton">Connect to ESP32</button></p>
 
   <script>
-    let device;
-    let characteristic;
+    let bluetoothDevice;
+    let bleCharacteristic;
+    const serviceUuid = '428141a5-9dc6-41d5-aa0a-3ec1592f4a97';  // Match with your service UUID
+    const characteristicUuid = 'cf7c281e-96fc-4f8e-a6b9-97e8cd98268f';  // Match with your characteristic UUID
 
-    const SERVICE_UUID = '428141a5-9dc6-41d5-aa0a-3ec1592f4a97';  // Replace with your actual service UUID
-    const CHARACTERISTIC_UUID = 'cf7c281e-96fc-4f8e-a6b9-97e8cd98268f';  // Replace with your actual characteristic UUID
+    const slider = document.getElementById("servoSlider");
+    const servoPos = document.getElementById("servoPos");
 
-    document.getElementById('connectButton').addEventListener('click', async () => {
+    slider.oninput = function() {
+      servoPos.innerHTML = this.value;
+      if (bleCharacteristic) {
+        let value = String(this.value);  // Convert the slider value to a string
+        let encoder = new TextEncoder();
+        bleCharacteristic.writeValue(encoder.encode(value));  // Send the slider value via BLE
+      }
+    };
+
+    document.getElementById("connectButton").addEventListener("click", async () => {
       try {
-        device = await navigator.bluetooth.requestDevice({
-          filters: [{ name: 'ESP32_Servo_Control' }],  // Replace with the name of your ESP32
-          optionalServices: [SERVICE_UUID]
+        console.log('Requesting Bluetooth Device...');
+        bluetoothDevice = await navigator.bluetooth.requestDevice({
+          filters: [{ services: [serviceUuid] }]
         });
 
-        const server = await device.gatt.connect();
-        const service = await server.getPrimaryService(SERVICE_UUID);
-        characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+        console.log('Connecting to GATT Server...');
+        const server = await bluetoothDevice.gatt.connect();
 
-        document.getElementById('connectButton').disabled = true;
-        alert('Connected to ESP32!');
+        console.log('Getting Service...');
+        const service = await server.getPrimaryService(serviceUuid);
+
+        console.log('Getting Characteristic...');
+        bleCharacteristic = await service.getCharacteristic(characteristicUuid);
+
+        console.log('Connected to ESP32! Ready to control servo.');
       } catch (error) {
-        console.error('Error connecting to ESP32:', error);
-      }
-    });
-
-    const slider = document.getElementById('servoSlider');
-    const servoPos = document.getElementById('servoPos');
-
-    slider.addEventListener('input', async () => {
-      const position = slider.value;
-      servoPos.textContent = position;
-
-      if (characteristic) {
-        const encoder = new TextEncoder();
-        await characteristic.writeValue(encoder.encode(position));
-      } else {
-        alert('Not connected to ESP32.');
+        console.error('Error: ' + error);
       }
     });
   </script>
