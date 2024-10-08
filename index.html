@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ESP32 Servo Control via Bluetooth Kofi</title>
+  <title>ESP32 Servo Control via Bluetooth</title>
   <style>
     body {
       text-align: center;
@@ -32,6 +32,7 @@
     const servoPos = document.getElementById("servoPos");
     const statusMessage = document.getElementById("statusMessage");
 
+    // Update the displayed servo position and send value to ESP32
     slider.oninput = function() {
       servoPos.innerHTML = this.value;
       if (bleCharacteristic) {
@@ -41,16 +42,12 @@
       }
     };
 
+    // Connect button event
     document.getElementById("connectButton").addEventListener("click", async () => {
       try {
         console.log('Requesting Bluetooth Device...');
         bluetoothDevice = await navigator.bluetooth.requestDevice({
-          filters: [
-            {
-              services: [serviceUuid],
-              name: "ESP32_Servo_Control_kofi"  // Replace with your ESP32's Bluetooth name
-            }
-          ]
+          filters: [{ name: 'ESP32_Servo_Control_kofi' }]  // Replace with your ESP32 device name
         });
 
         console.log('Connecting to GATT Server...');
